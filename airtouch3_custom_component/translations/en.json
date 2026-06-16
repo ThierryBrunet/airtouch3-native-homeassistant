@@ -1,0 +1,23 @@
+{
+    "title": "AirTouch 3 Climate",
+    "config": {
+        "abort": {
+            "already_configured": "Device is already configured"
+        },
+        "error": {
+            "device_fail": "Unexpected error",
+            "device_timeout": "Failed to connect",
+            "forbidden": "Invalid authentication"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Host",
+                    "port": "Port"
+                },
+                "description": "Enter the IP address of your AirTouch 3 controller (TCP port 8899).",
+                "title": "Configure AirTouch 3"
+            }
+        }
+    }
+}

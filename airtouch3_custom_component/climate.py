@@ -1,0 +1,311 @@
+"""Support for the Airthouch 3 Unit."""
+import logging
+
+import voluptuous as vol
+
+from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateEntity
+from homeassistant.components.climate.const import (
+    ATTR_FAN_MODE,
+    ATTR_HVAC_MODE,
+    HVACMode,
+    HVACAction,
+    ClimateEntityFeature,
+)
+from homeassistant.const import ATTR_TEMPERATURE, CONF_HOST, CONF_NAME, UnitOfTemperature
+import homeassistant.helpers.config_validation as cv
+
+from custom_components.airtouch3.airtouch_client import (
+    AC_POWER_ON,
+    AC_POWER_OFF,
+    AC_FAN_MODE_QUIET,
+    AC_FAN_MODE_LOW,
+    AC_FAN_MODE_MEDIUM,
+    AC_FAN_MODE_HIGH,
+    AC_FAN_MODE_POWERFUL,
+    AC_FAN_MODE_AUTO,
+    AC_MODE_HEAT,
+    AC_MODE_COOL,
+    AC_MODE_FAN,
+    AC_MODE_DRY,
+    AC_MODE_AUTO
+)
+
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from . import DOMAIN as AT3_DOMAIN
+from .coordinator import AirTouch3Coordinator
+from .const import (
+    ATTR_INSIDE_TEMPERATURE,
+    FAN_QUIET,
+    FAN_LOW,
+    FAN_MEDIUM,
+    FAN_HIGH,
+    FAN_POWERFUL,
+    FAN_AUTO 
+)
+
+_LOGGER = logging.getLogger(__name__)
+
+HA_STATE_TO_AT3 = {
+    HVACMode.OFF :-1,
+    HVACMode.HEAT: AC_MODE_HEAT,
+    HVACMode.COOL: AC_MODE_COOL,
+    HVACMode.FAN_ONLY: AC_MODE_FAN,
+    HVACMode.DRY: AC_MODE_DRY,
+    HVACMode.HEAT_COOL: AC_MODE_AUTO,
+}
+
+AT3_TO_HA_STATE = {
+   -1: HVACMode.OFF,
+    AC_MODE_HEAT: HVACMode.HEAT,
+    AC_MODE_COOL: HVACMode.COOL,
+    AC_MODE_FAN: HVACMode.FAN_ONLY,
+    AC_MODE_DRY: HVACMode.DRY,
+    AC_MODE_AUTO: HVACMode.HEAT_COOL
+}
+
+HA_STATE_TO_CURRENT_STATE = {
+    HVACMode.OFF : HVACAction.OFF,
+    HVACMode.HEAT: HVACAction.HEATING,
+    HVACMode.COOL: HVACAction.COOLING,
+    HVACMode.FAN_ONLY: HVACAction.IDLE,
+    HVACMode.DRY: HVACAction.DRYING,
+    HVACMode.HEAT_COOL: HVACAction.IDLE
+}
+
+HA_FAN_MODE_TO_AT3 = {
+    FAN_QUIET : AC_FAN_MODE_QUIET,
+    FAN_LOW : AC_FAN_MODE_LOW,
+    FAN_MEDIUM : AC_FAN_MODE_MEDIUM,
+    FAN_HIGH : AC_FAN_MODE_HIGH,
+    FAN_POWERFUL : AC_FAN_MODE_POWERFUL,
+    FAN_AUTO : AC_FAN_MODE_AUTO
+}
+
+AT3_TO_HA_FAN_MODE = {
+    AC_FAN_MODE_QUIET: FAN_QUIET,
+    AC_FAN_MODE_LOW: FAN_LOW,
+    AC_FAN_MODE_MEDIUM: FAN_MEDIUM,
+    AC_FAN_MODE_HIGH: FAN_HIGH,
+    AC_FAN_MODE_POWERFUL: FAN_POWERFUL,
+    AC_FAN_MODE_AUTO: FAN_AUTO
+}
+
+TEMPERATURE_PRECISION = 1
+TARGET_TEMPERATURE_STEP = 1
+
+SUPPORTED_FEATURES = \
+    ClimateEntityFeature.TARGET_TEMPERATURE | \
+    ClimateEntityFeature.FAN_MODE | \
+    ClimateEntityFeature.TURN_ON | \
+    ClimateEntityFeature.TURN_OFF
+
+CLIMATE_ICON = "mdi:home-variant-outline"
+
+async def async_setup_entry(hass, entry, async_add_entities):
+    """Set up AirTouch3 climate based on config_entry."""
+    coordinator: AirTouch3Coordinator = hass.data[AT3_DOMAIN][entry.entry_id]
+    _LOGGER.debug(f"[AT3Climate] Init {coordinator.device.name}")
+    async_add_entities([AirTouch3Climate(coordinator)], update_before_add=True)
+
+    async def handle_set_zone_temperature(call):
+        """Handle the service call."""
+        _LOGGER.debug(f"[AT3Climate.handle_set_zone_temperature] Call Data [{call}]")
+
+        desired_temperature = call.data.get('temperature')
+        if desired_temperature is None:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Desired Temperature not specified")
+            return
+
+        if type(desired_temperature) != int:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Desired Temperature must be a whole positive number")
+            return
+
+        if desired_temperature < 16 or desired_temperature >32:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Desired Temperature out of range. Valid temperature range is 16 to 32 degrees {desired_temperature}")
+            return
+
+        entity_id = call.data.get('entity_id')
+        if entity_id is None:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] entity_id not specified")
+            return
+
+        entity_item = hass.states.get(entity_id)
+        if entity_item is None:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Entity not found {entity_id}")
+            return
+
+        zone_id = entity_item.attributes['id']
+        if zone_id is None:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Entity does not have id attribute {entity_item}")
+            return
+
+        current_desired_temperature = entity_item.attributes['desired_temperature']
+        if current_desired_temperature is None:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Entity does not have desired_temperature attribute {entity_item}")
+            return
+
+        while desired_temperature != current_desired_temperature:
+            current_desired_temperature = await coordinator.device.set_zone_temperature(zone_id, desired_temperature)
+            _LOGGER.debug(f"current_desired_temperature {current_desired_temperature} {desired_temperature}")
+            if current_desired_temperature is None:
+                _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Desired Temperature failed. Try again")
+                break
+            if current_desired_temperature == 0:
+                _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Desired Temperature for zone id {zone_id} cannot be set. Zone is non temperature controlled")
+                break
+
+    hass.services.async_register(AT3_DOMAIN, "set_zone_temperature", handle_set_zone_temperature)
+
+
+class AirTouch3Climate(CoordinatorEntity, ClimateEntity):
+    """Representation of a AirTouch3 Unit."""
+
+    def __init__(self, coordinator: AirTouch3Coordinator):
+        """Initialize"""
+        super().__init__(coordinator)
+        self._api = coordinator.device
+        self._list = {
+            ATTR_HVAC_MODE: list(HA_STATE_TO_AT3),
+            ATTR_FAN_MODE: list(HA_FAN_MODE_TO_AT3)
+        }
+        self._supported_features = SUPPORTED_FEATURES
+
+    @property
+    def supported_features(self):
+        """Return the list of supported features."""
+        return self._supported_features
+
+    @property
+    def device_info(self):
+        """Return a device description for device registry."""
+        return self._api.device_info
+
+    @property
+    def icon(self):
+        """Front End Icon"""
+        return CLIMATE_ICON
+
+    @property
+    def name(self):
+        """Return the name of the thermostat, if any."""
+        return self._api.name
+
+    @property
+    def unique_id(self):
+        """Return a unique ID."""
+        return self._api.airtouch_id
+
+    @property
+    def temperature_unit(self):
+        """Return the unit of measurement which this thermostat uses."""
+        return UnitOfTemperature.CELSIUS
+
+    @property
+    def precision(self):
+        """Return the precision of the temperature in the system."""
+        return TEMPERATURE_PRECISION
+
+    @property
+    def current_temperature(self):
+        """Return the current temperature."""
+        return self._api.room_temperature
+
+    @property
+    def target_temperature(self):
+        """Return the temperature we try to reach."""
+        return self._api.desired_temperature
+
+    @property
+    def target_temperature_step(self):
+        """Return the supported step of target temperature."""
+        return TARGET_TEMPERATURE_STEP
+
+    @property
+    def hvac_action(self):
+        """The current HVAC action (heating, cooling)"""
+        if self._api.power == AC_POWER_OFF:
+            return HVACAction.OFF
+            
+        ac_mode = self._api.mode
+        return HA_STATE_TO_CURRENT_STATE.get(AT3_TO_HA_STATE.get(ac_mode, HVACMode.HEAT_COOL), HVACAction.IDLE)
+
+    @property
+    def hvac_mode(self):
+        """Return current operation ie. heat, cool, idle. Used to determine state."""
+        ac_mode = self._api.mode
+        return AT3_TO_HA_STATE.get(ac_mode, HVACMode.HEAT_COOL)
+
+    @property
+    def hvac_modes(self):
+        """Return selectable operation modes (power is separate turn_on/turn_off)."""
+        return [
+            mode
+            for mode in self._list.get(ATTR_HVAC_MODE)
+            if mode != HVACMode.OFF
+        ]
+
+    @property
+    def fan_mode(self):
+        """Return the fan setting."""
+        ac_fan_mode = self._api.fan_mode
+        return AT3_TO_HA_FAN_MODE.get(ac_fan_mode, FAN_LOW)
+
+    @property
+    def fan_modes(self):
+        """List of available fan modes."""
+        return self._list.get(ATTR_FAN_MODE)
+
+    @property
+    def extra_state_attributes(self):
+        """Expose AirTouch context for the dashboard and diagnostics."""
+        return {
+            "ac_power": self._api.power == AC_POWER_ON,
+            "ac_mode": self._api.mode,
+            "ac_mode_name": self._api.ac_mode_name,
+            "selected_hvac_mode": self.hvac_mode,
+            "active_temperature_source": self._api.active_temperature_source,
+        }
+
+    async def async_turn_on(self, **kwargs):
+        """Power the AC unit on without changing the selected mode."""
+        _LOGGER.debug("[AT3Climate] async_turn_on")
+        await self._api.power_switch(AC_POWER_ON)
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs):
+        """Power the AC unit off without changing the selected mode."""
+        _LOGGER.debug("[AT3Climate] async_turn_off")
+        await self._api.power_switch(AC_POWER_OFF)
+        self.async_write_ha_state()
+
+    async def async_set_hvac_mode(self, hvac_mode):
+        """Set HVAC mode without toggling unit power."""
+        if hvac_mode == HVACMode.OFF:
+            _LOGGER.debug("[AT3Climate] async_set_hvac_mode Turning AC OFF")
+            await self._api.power_switch(AC_POWER_OFF)
+            self.async_write_ha_state()
+            return
+
+        _LOGGER.debug(
+            "[AT3Climate] async_set_hvac_mode Setting hvac_mode mode to %s",
+            hvac_mode,
+        )
+        await self._api.set_mode(HA_STATE_TO_AT3.get(hvac_mode))
+        self.async_write_ha_state()
+
+    async def async_set_fan_mode(self, fan_mode):
+        """Set fan mode."""
+        await self._api.set_fan_mode(HA_FAN_MODE_TO_AT3.get(fan_mode)) 
+
+    async def async_set_temperature(self, **kwargs):
+        """Set the desired temperature"""
+        _LOGGER.debug(f"[AT3Climate] async_set_temperature [{kwargs}]")
+        temperature = kwargs.get(ATTR_TEMPERATURE)
+        if temperature is not None:
+            _LOGGER.debug(f"[AT3Climate] async_set_temperature Set temperature to [{temperature}]")
+            await self._api.set_temperature_thermostat_mode(temperature)
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._api.available

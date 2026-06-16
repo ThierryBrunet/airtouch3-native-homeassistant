@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+.venv/
+venv/
+
+# Reference clones / legacy stacks (not part of the native integration)
+vzduch-dotek/
+home-assistant-addons/
+misc/
+
+# Local / IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Build / deploy artifacts
+*.pyc
