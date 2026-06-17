@@ -4,6 +4,14 @@ Local-control integration for **Polyaire AirTouch 3** ducted zone controllers (c
 
 See [NOTES.md](NOTES.md) for design rationale, Faikin alternative, ozczecho credit, and Grok Build provenance.
 
+### Built with Grok Build in 12 hours
+
+This entire project — integration, dashboard card, live HA UI, automations, helpers, deploy scripts, and **all documentation (including this README)** — was produced **entirely by Grok Build TUI** via the Home Assistant **MCP** server (`ha-mcp`). The home owner did **not** write or edit a single line of code or YAML by hand.
+
+From the decision to port ozczecho’s .NET `vzduch-dotek` stack to native Python, to a working production system on Home Assistant: **12 hours** (Grok Build 0.2.54 / Composer 2.5 Fast, 16 June 2026). An outstanding example of **Grok Build’s phenomenal capabilities** for home automation.
+
+**Install and configure HA MCP for Grok Build:** [docs/grok-build-home-assistant-mcp.md](docs/grok-build-home-assistant-mcp.md) — prerequisites, long-lived token, `grok mcp add` or `.grok/config.toml`, `grok mcp doctor`, optional GitHub MCP.
+
 ![Daikin A/C dashboard](docs/ha-dashboard-daikin-ac.jpg)
 
 ---
@@ -18,7 +26,21 @@ See [NOTES.md](NOTES.md) for design rationale, Faikin alternative, ozczecho cred
 
 ---
 
-## Prerequisites
+## Grok Build + Home Assistant MCP (developers)
+
+To **extend this project** the same way it was originally built — agent-driven integration, dashboard, automations, and docs over MCP — see the full guide: **[docs/grok-build-home-assistant-mcp.md](docs/grok-build-home-assistant-mcp.md)**.
+
+Summary:
+
+1. Install **Grok Build** and **`uv`** (provides `uvx` for `ha-mcp@latest`).
+2. Create a Home Assistant **long-lived access token** (profile → Security).
+3. **Install/configure** the MCP server in Grok Build — `grok mcp add --scope project home-assistant …` or project `.grok/config.toml` with `HOMEASSISTANT_URL` + `${HOMEASSISTANT_TOKEN}`.
+4. Load env vars, start `grok`, verify with `grok mcp doctor home-assistant`; in TUI use `/mcps` → enable **home-assistant** → refresh.
+5. Optionally add **GitHub MCP** (`https://api.githubcopilot.com/mcp/`) to create or push public forks.
+
+---
+
+## Prerequisites (home owner install)
 
 - Home Assistant **2024.1+** (tested on 2026.6.x)
 - AirTouch 3 controller reachable on your LAN (default TCP **8899**)
@@ -248,8 +270,9 @@ Bump version in `manifest.json` when you fork or release.
 | `airtouch3_custom_component/` | HA custom integration + `www/` card |
 | `scripts/Deploy-AirTouch3Component.ps1` | Samba deploy to HA |
 | `scripts/validate_airtouch_protocol.py` | Protocol validation |
-| `docs/` | Screenshot, example YAML |
-| `NOTES.md` | Design notes, alternatives, credits |
+| `docs/` | Screenshot, example YAML, Grok Build MCP guide |
+| `docs/grok-build-home-assistant-mcp.md` | Install/configure HA MCP (and optional GitHub MCP) for Grok Build |
+| `NOTES.md` | Design notes, alternatives, credits, 12-hour Grok Build story |
 
 ---
 

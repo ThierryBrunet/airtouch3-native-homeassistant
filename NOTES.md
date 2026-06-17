@@ -1,14 +1,20 @@
 # Design notes — `airtouch3-native-homeassistant`
 
-> **Provenance:** This project was **100% generated using Grok Build TUI** via Home Assistant’s **MCP local server** (`ha-mcp`). Tooling: **Grok Build 0.2.54** / **Composer 2.5 Fast** — **16 June 2026**.
+> **Provenance:** This entire project — native Python integration, custom Lovelace card, live dashboard, automations, helpers, deployment scripts, and **all documentation in this repository** — was **100% generated using Grok Build TUI** via Home Assistant’s **MCP local server** (`ha-mcp`). The home owner did **not** write or edit a single line of code or YAML by hand.
+>
+> **Timeline:** From the decision to port ozczecho’s .NET `vzduch-dotek` approach to a native HA integration, to a fully working system on a production Home Assistant instance, took **12 hours**. Tooling: **Grok Build 0.2.54** / **Composer 2.5 Fast** — **16 June 2026**.
+>
+> This is an outstanding example of **Grok Build’s phenomenal capabilities** for real-world home automation: protocol porting, UI design, MCP-driven HA configuration, and publishable docs in one session.
 
 Context for why this repository exists and which alternatives were evaluated before committing to a **software-only** native Home Assistant integration for an existing **AirTouch 3** installation.
+
+**Grok Build + HA MCP setup:** [docs/grok-build-home-assistant-mcp.md](docs/grok-build-home-assistant-mcp.md)
 
 ---
 
 ## Home Assistant UI
 
-The dashboard, custom Lovelace card, automations, helpers, and integration wiring were built entirely through Grok Build talking to the live Home Assistant instance over MCP — no manual YAML editing in the HA UI was required for the core deliverables.
+The dashboard, custom Lovelace card, automations, helpers, and integration wiring were built entirely through Grok Build talking to the live Home Assistant instance over MCP. See [docs/grok-build-home-assistant-mcp.md](docs/grok-build-home-assistant-mcp.md) for how to install and configure the Home Assistant MCP server in Grok Build.
 
 ![Daikin A/C dashboard in Home Assistant — unit modes, fan speed, and six zone cards with temperature and damper controls](docs/ha-dashboard-daikin-ac.jpg)
 
@@ -83,7 +89,7 @@ Summary of what **`airtouch3-native-homeassistant`** will publish on GitHub:
 | **Dashboard card** | `www/daikin-ac-panel-v11.js` — custom Lovelace panel with unit power, modes, fan row, zone controls, 7-day temperature + damper charts |
 | **Deploy** | `scripts/Deploy-AirTouch3Component.ps1` — Samba deploy to HA `custom_components` and `www` |
 | **Validation** | `scripts/Test-AirTouchConnection.ps1`, `scripts/validate_airtouch_protocol.py` |
-| **Docs** | `README.md` (build/deploy), `NOTES.md` (this file), screenshot, example YAML under `docs/` |
+| **Docs** | `README.md` (build/deploy), `NOTES.md` (this file), `docs/grok-build-home-assistant-mcp.md`, screenshot, example YAML |
 | **License** | MIT (compatible with upstream vzduch-dotek) |
 
 **Not included** in the public repo (local reference only, `.gitignore`d): cloned `vzduch-dotek` .NET tree, legacy HA add-on fork, and session misc notes.
