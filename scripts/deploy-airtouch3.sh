@@ -39,7 +39,7 @@ rsync -avz --delete \
   "$SOURCE_DIR/" "${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/custom_components/airtouch3/"
 
 for card in \
-  "$SOURCE_DIR/www/daikin-ac-panel-v16.js" \
+  "$SOURCE_DIR/www/daikin-ac-panel-v17.js" \
   "$SOURCE_DIR"/www/daikin-ac-panel-v*.js \
   "$SOURCE_DIR"/www/daikin-ac-panel.js; do
   [[ -f "$card" ]] || continue
