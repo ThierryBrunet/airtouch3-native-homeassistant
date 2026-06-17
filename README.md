@@ -42,6 +42,30 @@ Summary:
 
 ---
 
+## TIP — let Grok Build do the work
+
+**You do not need to follow every step below by hand.** [Grok Build](https://github.com/xai-org/grok) is exceptionally capable at Home Assistant work when connected via the [Home Assistant MCP](docs/grok-build-home-assistant-mcp.md). This entire project was built that way — in 12 hours, with zero manual code or YAML.
+
+Instead of copying commands from this README, open Grok Build and **describe what you want in plain English**. Grok will read your live HA instance, clone repos, deploy files, wire dashboards, and tune automations for you.
+
+**Try prompts like these** (copy, tweak names/IPs, send):
+
+> Install and configure the Home Assistant MCP server for Grok Build on this machine.
+
+> Clone [airtouch3-native-homeassistant](https://github.com/ThierryBrunet/airtouch3-native-homeassistant) into my workspace and deploy the full integration and dashboard card to my Home Assistant at `192.168.x.x`.
+
+> Set up the Daikin A/C dashboard from this repo — add the Lovelace resource, create the panel view, and map my zone entities.
+
+> On the dashboard, change the **FAMILY** zone card color from blue to pink.
+
+> Add an automation: turn off the AC unit at **9:00 PM on weekdays** and **11:00 PM on weekends**.
+
+> Create a morning automation — start the unit at 6 AM, or earlier if motion is detected between 4 and 6 AM, with fan on High.
+
+Grok Build figures out the Samba paths, entity IDs, YAML, restarts, and verification. The manual instructions below are still here if you prefer a hands-on install — or if you want to see exactly what Grok did under the hood.
+
+---
+
 ## Prerequisites (home owner install)
 
 - Home Assistant **2024.1+** (tested on 2026.6.x)
