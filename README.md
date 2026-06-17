@@ -64,6 +64,22 @@ Instead of copying commands from this README, open Grok Build and **describe wha
 
 Grok Build figures out the Samba paths, entity IDs, YAML, restarts, and verification. The manual instructions below are still here if you prefer a hands-on install — or if you want to see exactly what Grok did under the hood.
 
+### TIP — manage secrets securely
+
+This project needs a few credentials: Home Assistant URL and long-lived token (for `ha-mcp`), Samba or SSH access for deploy, and optionally a GitHub PAT. **Do not paste them into chat, commit them to git, or hard-code them in `.grok/config.toml`.**
+
+Ask Grok Build to wire up secret handling for you. On Windows, the author uses **[PowerShell SecretStore](https://learn.microsoft.com/en-us/powershell/utility-modules/secretmanagement/overview)** (`Microsoft.PowerShell.SecretStore`) — secrets stay encrypted on disk and load into environment variables before `grok` starts. You may prefer something else: **1Password CLI**, **macOS Keychain**, **Windows Credential Manager**, **Bitwarden**, or plain **shell env vars** in a local-only profile script.
+
+**Try prompts like these:**
+
+> Set up secure credential storage for this AirTouch project: Home Assistant MCP token and URL, Samba deploy credentials, and GitHub PAT. Use PowerShell SecretStore on my Windows PC — never print secret values in chat or commit them to the repo.
+
+> Create a `Load-McpSecrets.ps1` beside `.grok/config.toml` that loads `HOMEASSISTANT_URL`, `HOMEASSISTANT_TOKEN`, and `GITHUB_PERSONAL_ACCESS_TOKEN` from my vault, then document how to dot-source it before starting Grok.
+
+> Audit this workspace for leaked tokens — config files, scripts, and git history should reference `${ENV_VAR}` placeholders only.
+
+Reference implementation: `GrokBuild/.grok/Load-McpSecrets.ps1` and [docs/grok-build-home-assistant-mcp.md](docs/grok-build-home-assistant-mcp.md).
+
 ---
 
 ## Prerequisites (home owner install)
