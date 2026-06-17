@@ -18,7 +18,7 @@ param(
     [string] $SambaHost = '192.168.31.233',
     [string] $SambaShare = 'config',
     [string] $SourceDir = (Join-Path $PSScriptRoot '..\airtouch3_custom_component'),
-    [string] $PanelVersionFile = 'daikin-ac-panel-v22.js',
+    [string] $PanelVersionFile = 'daikin-ac-panel-v23.js',
     [switch] $RestartHa,
     [switch] $SkipLovelaceResourceUpdate,
     [PSCredential] $Credential
@@ -51,7 +51,33 @@ function Get-DaikinPanelResourceUrl {
     return "/local/daikin-ac-panel.js?v=$versionTag"
 }
 
-function Update-DaikinLovelaceResource {
+function Get-DaikinSambaCredential {
+    param([PSCredential] $Credential)
+
+    if ($Credential) {
+        return $Credential
+    }
+
+    $loader = Join-Path $env:USERPROFILE '.grok\skills\secretstore-get\scripts\Load-SecretsToEnv.ps1'
+    if (-not (Test-Path -LiteralPath $loader)) {
+        return $null
+    }
+
+    & $loader -Mappings @(
+        @{ SecretName = 'HomeAssistant_Samba_MazeppaHome_SecObj'; EnvVar = 'SAMBA_PASS' },
+        @{ SecretName = 'HomeAssistant_Samba_MazeppaHome_SecObj'; EnvVar = 'SAMBA_USER'; Property = 'AssignedTo' }
+    ) | Out-Null
+
+    if (-not $env:SAMBA_USER -or -not $env:SAMBA_PASS) {
+        return $null
+    }
+
+    $securePass = ConvertTo-SecureString $env:SAMBA_PASS -AsPlainText -Force
+    Remove-Item Env:SAMBA_PASS -ErrorAction SilentlyContinue
+    return [PSCredential]::new($env:SAMBA_USER, $securePass)
+}
+
+function Update-DaikinLovelaceResourceStorage {
     param(
         [string] $StorageRoot,
         [string] $ResourceUrl
@@ -60,34 +86,94 @@ function Update-DaikinLovelaceResource {
     $resourcePath = Join-Path $StorageRoot 'lovelace_resources'
     if (-not (Test-Path -LiteralPath $resourcePath)) {
         Write-Warning "Lovelace resources storage not found: $resourcePath"
-        return
+        return $false
     }
 
     $normalizedUrl = $ResourceUrl.Trim()
     $raw = Get-Content -LiteralPath $resourcePath -Raw -Encoding UTF8
-    if ($raw -match 'daikin-ac-panel') {
-        $newRaw = $raw -replace '"/local/daikin-ac-panel[^"]*"', "`"$normalizedUrl`""
-        if ($newRaw -ne $raw) {
-            Set-Content -LiteralPath $resourcePath -Value $newRaw -Encoding UTF8
-            Write-Host "Updated Lovelace resource -> $normalizedUrl" -ForegroundColor Green
+    $json = $raw | ConvertFrom-Json
+    $items = @($json.data.items)
+    $matched = $false
+    foreach ($item in $items) {
+        $itemUrl = [string]$item.url
+        if ($itemUrl -match 'daikin-ac-panel') {
+            $matched = $true
+            $item.url = $normalizedUrl
         }
-        else {
-            Write-Host "Lovelace resource already set to $normalizedUrl" -ForegroundColor DarkGray
-        }
-        return
     }
 
-    $json = $raw | ConvertFrom-Json
-    $json.data.items += [PSCustomObject]@{
-        id   = ([guid]::NewGuid().ToString('N'))
-        url  = $normalizedUrl
-        type = 'module'
+    if (-not $matched) {
+        $items += [PSCustomObject]@{
+            id   = ([guid]::NewGuid().ToString('N'))
+            url  = $normalizedUrl
+            type = 'module'
+        }
     }
+
+    $json.data.items = $items
     $json | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $resourcePath -Encoding UTF8
-    Write-Host "Added Lovelace resource -> $normalizedUrl" -ForegroundColor Green
+    Write-Host "Updated Lovelace storage resource -> $normalizedUrl" -ForegroundColor Green
+    return $true
+}
+
+function Update-DaikinLovelaceResourceApi {
+    param(
+        [string] $ResourceUrl,
+        [string] $SambaHost
+    )
+
+    $loader = Join-Path $env:USERPROFILE '.grok\skills\secretstore-get\scripts\Load-SecretsToEnv.ps1'
+    if (-not (Test-Path -LiteralPath $loader)) {
+        return $false
+    }
+
+    & $loader -Mappings @(
+        @{ SecretName = 'HomeAssistant_MazeppaHome_SecObj'; EnvVar = 'HOMEASSISTANT_TOKEN' },
+        @{ SecretName = 'HomeAssistant_MazeppaHome_SecObj'; EnvVar = 'HOMEASSISTANT_URL'; Property = 'Url' }
+    ) | Out-Null
+
+    if (-not $env:HOMEASSISTANT_TOKEN) {
+        return $false
+    }
+
+    $baseUrl = if ($env:HOMEASSISTANT_URL) { $env:HOMEASSISTANT_URL.TrimEnd('/') } else { "http://${SambaHost}:8123" }
+    $headers = @{ Authorization = "Bearer $env:HOMEASSISTANT_TOKEN" }
+    $normalizedUrl = $ResourceUrl.Trim()
+
+    try {
+        $resources = Invoke-RestMethod -Uri "$baseUrl/api/lovelace/resources" -Headers $headers -Method Get
+    }
+    catch {
+        Write-Warning "Lovelace resources API unavailable (storage file was still updated): $($_.Exception.Message)"
+        return $false
+    }
+
+    $matched = $false
+    foreach ($resource in @($resources)) {
+        if ([string]$resource.url -match 'daikin-ac-panel') {
+            $matched = $true
+            $body = @{ url = $normalizedUrl; type = 'module' } | ConvertTo-Json
+            Invoke-RestMethod -Uri "$baseUrl/api/lovelace/resources/$($resource.id)" -Headers $headers -Method Put -Body $body -ContentType 'application/json' | Out-Null
+        }
+    }
+
+    if (-not $matched) {
+        $body = @{ url = $normalizedUrl; type = 'module' } | ConvertTo-Json
+        Invoke-RestMethod -Uri "$baseUrl/api/lovelace/resources" -Headers $headers -Method Post -Body $body -ContentType 'application/json' | Out-Null
+    }
+
+    Write-Host "Updated Lovelace API resource -> $normalizedUrl" -ForegroundColor Green
+    return $true
 }
 
 try {
+    if (-not $Credential) {
+        $Credential = Get-DaikinSambaCredential -Credential $null
+        if ($Credential) {
+            Write-Host "Using Samba credentials from SecretStore." -ForegroundColor Cyan
+        }
+    }
+
     if ($Credential) {
         $psDriveName = 'HaCfg' + ([guid]::NewGuid().ToString('N').Substring(0, 6))
         $null = New-PSDrive -Name $psDriveName -PSProvider FileSystem -Root $shareRoot -Credential $Credential -Scope Script
@@ -120,7 +206,11 @@ Provide -Credential or sign in to the share first (Explorer -> \\$SambaHost\$Sam
 
     robocopy $source $paths.ComponentDest /E /XD .git __pycache__ /XF at3.PNG /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
     if ($LASTEXITCODE -ge 8) {
-        throw "robocopy failed with exit code $LASTEXITCODE"
+        Write-Warning "robocopy failed with exit code $LASTEXITCODE; retrying with Copy-Item."
+        if (Test-Path -LiteralPath $paths.ComponentDest) {
+            Remove-Item -LiteralPath $paths.ComponentDest -Recurse -Force
+        }
+        Copy-Item -LiteralPath $source -Destination $paths.ComponentDest -Recurse -Force
     }
 
     $latestPanelSource = Join-Path $source "www\$PanelVersionFile"
@@ -147,7 +237,8 @@ Provide -Credential or sign in to the share first (Explorer -> \\$SambaHost\$Sam
 
     if (-not $SkipLovelaceResourceUpdate) {
         $resourceUrl = Get-DaikinPanelResourceUrl -PanelVersionFile $PanelVersionFile
-        Update-DaikinLovelaceResource -StorageRoot $paths.StorageRoot -ResourceUrl $resourceUrl
+        Update-DaikinLovelaceResourceStorage -StorageRoot $paths.StorageRoot -ResourceUrl $resourceUrl | Out-Null
+        Update-DaikinLovelaceResourceApi -ResourceUrl $resourceUrl -SambaHost $SambaHost | Out-Null
     }
 
     Write-Host "Deployed AirTouch 3 component to $($paths.ComponentDest)" -ForegroundColor Green
