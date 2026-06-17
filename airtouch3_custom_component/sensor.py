@@ -4,7 +4,6 @@ import logging
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import UnitOfTemperature
-from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import DOMAIN as AT3_DOMAIN
@@ -38,7 +37,6 @@ class AT3Sensor(CoordinatorEntity, SensorEntity):
     _attr_device_class = SENSOR_TYPE_TEMPERATURE
     _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
     _attr_icon = SENSOR_ICON
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator: AirTouch3Coordinator, sensor_id: int) -> None:
         super().__init__(coordinator)

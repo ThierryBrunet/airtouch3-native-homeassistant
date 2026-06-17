@@ -38,7 +38,10 @@ rsync -avz --delete \
   -e "$RSYNC_SSH" \
   "$SOURCE_DIR/" "${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/custom_components/airtouch3/"
 
-for card in "$SOURCE_DIR"/www/daikin-ac-panel-v*.js "$SOURCE_DIR"/www/daikin-ac-panel.js; do
+for card in \
+  "$SOURCE_DIR/www/daikin-ac-panel-v12.js" \
+  "$SOURCE_DIR"/www/daikin-ac-panel-v*.js \
+  "$SOURCE_DIR"/www/daikin-ac-panel.js; do
   [[ -f "$card" ]] || continue
   echo "Deploying dashboard card $(basename "$card")"
   rsync -avz -e "$RSYNC_SSH" "$card" "${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/www/"
