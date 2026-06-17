@@ -1,5 +1,7 @@
 # AirTouch 3 — native Home Assistant integration
 
+[![GitHub](https://img.shields.io/github/stars/ThierryBrunet/airtouch3-native-homeassistant?style=social)](https://github.com/ThierryBrunet/airtouch3-native-homeassistant)
+
 Local-control integration for **Polyaire AirTouch 3** ducted zone controllers (common with **Daikin** indoor units). Talks directly to the wall controller on TCP port **8899** — no `vzduch-dotek` .NET API, no cloud.
 
 See [NOTES.md](NOTES.md) for design rationale, Faikin alternative, ozczecho credit, and Grok Build provenance.

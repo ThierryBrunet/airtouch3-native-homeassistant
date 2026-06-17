@@ -2,10 +2,10 @@
     "domain": "airtouch3",
     "name": "AirTouch 3",
     "config_flow": true,
-    "documentation": "https://www.home-assistant.io/integrations/airtouch3",
-    "issue_tracker": "https://github.com/home-assistant/core/issues",
+    "documentation": "https://github.com/ThierryBrunet/airtouch3-native-homeassistant",
+    "issue_tracker": "https://github.com/ThierryBrunet/airtouch3-native-homeassistant/issues",
     "dependencies": [],
-    "codeowners": [],
+    "codeowners": ["@ThierryBrunet"],
     "requirements": [],
     "version": "1.0.5"
 }
