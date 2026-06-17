@@ -1,6 +1,18 @@
 # Design notes — `airtouch3-native-homeassistant`
 
+> **Provenance:** This project was **100% generated using Grok Build TUI** via Home Assistant’s **MCP local server** (`ha-mcp`). Tooling: **Grok Build 0.2.54** / **Composer 2.5 Fast** — **16 June 2026**.
+
 Context for why this repository exists and which alternatives were evaluated before committing to a **software-only** native Home Assistant integration for an existing **AirTouch 3** installation.
+
+---
+
+## Home Assistant UI
+
+The dashboard, custom Lovelace card, automations, helpers, and integration wiring were built entirely through Grok Build talking to the live Home Assistant instance over MCP — no manual YAML editing in the HA UI was required for the core deliverables.
+
+![Daikin A/C dashboard in Home Assistant — unit modes, fan speed, and six zone cards with temperature and damper controls](docs/ha-dashboard-daikin-ac.jpg)
+
+*Daikin A/C panel dashboard (`daikin-ac`): climate entity, per-zone switches/fans, target temperature and damper controls, 7-day temperature and damper history charts (in panel v11).*
 
 ---
 
@@ -49,3 +61,23 @@ Original local-control work for AirTouch 3 on Home Assistant:
 This native integration is a derivative/conversion of that published protocol and entity model, reimplemented in Python without a vzduch-dotek dependency. MIT-licensed upstream; attribution retained by reference and in this document.
 
 Faikin/Faikout is **independent** work by [RevK](https://codeberg.org/RevK) — credited here as an alternative considered, not as source code for this repository.
+
+---
+
+## Planned public repository contents
+
+Summary of what **`airtouch3-native-homeassistant`** will publish on GitHub:
+
+| Area | Contents |
+|------|----------|
+| **Integration** | Native Python `custom_components/airtouch3/` — direct TCP to the panel (v1.0.5): climate, zones, fans, sensors, config flow, `airtouch3.set_zone_temperature` service |
+| **Protocol** | `protocol/` package — messages, parser, client (derived from ozczecho’s published behaviour) |
+| **Dashboard card** | `www/daikin-ac-panel-v11.js` — custom Lovelace panel with unit power, modes, fan row, zone controls, 7-day temperature + damper charts |
+| **Deploy** | `scripts/Deploy-AirTouch3Component.ps1` — Samba deploy to HA `custom_components` and `www` |
+| **Validation** | `scripts/Test-AirTouchConnection.ps1`, `scripts/validate_airtouch_protocol.py` |
+| **Docs** | `NOTES.md` (this file), screenshot (`docs/ha-dashboard-daikin-ac.jpg`), rationale, Faikin alternative, Grok Build provenance, ozczecho credit |
+| **License** | MIT (compatible with upstream vzduch-dotek) |
+
+**Not included** in the public repo (local reference only, `.gitignore`d): cloned `vzduch-dotek` .NET tree, legacy HA add-on fork, and session misc notes.
+
+**HA config created via MCP** (documented, not exported as YAML files): `daikin-ac` dashboard, `automation.daikin_ac_morning_start`, `binary_sensor.brunet_ac_power` helper — restore from HA backup or recreate using the integration README once published.
