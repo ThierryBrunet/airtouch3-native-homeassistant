@@ -91,7 +91,13 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 
 Grok expands `${HOMEASSISTANT_TOKEN}` from the environment at startup — the token does not belong in the committed config file.
 
-**Optional — SecretStore loader** (keeps tokens out of chat and config files): create a small `Load-McpSecrets.ps1` beside `.grok/config.toml` that sets `HOMEASSISTANT_TOKEN` (and `GITHUB_PERSONAL_ACCESS_TOKEN` if you use GitHub MCP) from your local vault, then dot-source it before `grok`.
+**SecretStore loader (this workspace):** `GrokBuild/.grok/Load-McpSecrets.ps1` loads `HOMEASSISTANT_URL`, `HOMEASSISTANT_TOKEN`, and `GITHUB_PERSONAL_ACCESS_TOKEN` from SecretStore before `grok`. Workspace MCP config: `GrokBuild/.grok/config.toml` (GitHub + home-assistant). Dot-source from the GrokBuild root:
+
+```powershell
+cd C:\Users\thier\OneDrive\Workspaces\GrokBuild
+. .\.grok\Load-McpSecrets.ps1
+grok
+```
 
 ### Verify
 
