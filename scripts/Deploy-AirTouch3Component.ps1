@@ -74,7 +74,7 @@ Provide -Credential or sign in to the share first (Explorer -> \\$SambaHost\$Sam
     }
 
     $wwwFiles = @(
-        'daikin-ac-panel-v15.js', 'daikin-ac-panel-v14.js', 'daikin-ac-panel-v13.js', 'daikin-ac-panel-v12.js', 'daikin-ac-panel-v11.js', 'daikin-ac-panel-v10.js', 'daikin-ac-panel-v9.js',
+        'daikin-ac-panel-v16.js', 'daikin-ac-panel-v15.js', 'daikin-ac-panel-v14.js', 'daikin-ac-panel-v13.js', 'daikin-ac-panel-v12.js', 'daikin-ac-panel-v11.js', 'daikin-ac-panel-v10.js', 'daikin-ac-panel-v9.js',
         'daikin-ac-panel-v8.js', 'daikin-ac-panel-v7.js', 'daikin-ac-panel-v6.js',
         'daikin-ac-panel-v5.js', 'daikin-ac-panel-v4.js', 'daikin-ac-panel-v3.js',
         'daikin-ac-panel-v2.js', 'daikin-ac-panel.js'
