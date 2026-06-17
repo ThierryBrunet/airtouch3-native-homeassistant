@@ -38,7 +38,7 @@ rsync -avz --delete \
   -e "$RSYNC_SSH" \
   "$SOURCE_DIR/" "${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/custom_components/airtouch3/"
 
-PANEL_VERSION_FILE="${PANEL_VERSION_FILE:-daikin-ac-panel-v23.js}"
+PANEL_VERSION_FILE="${PANEL_VERSION_FILE:-daikin-ac-panel-v24.js}"
 
 for card in \
   "$SOURCE_DIR/www/$PANEL_VERSION_FILE" \
@@ -56,11 +56,24 @@ if [[ -f "$SOURCE_DIR/www/$PANEL_VERSION_FILE" ]]; then
     "${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/www/daikin-ac-panel.js"
 fi
 
+VERSION_TAG="$(echo "$PANEL_VERSION_FILE" | sed -n 's/.*v\([0-9][0-9]*\).*/\1/p')"
+VERSION_TAG="${VERSION_TAG:-0}"
+TARGET_URL="/local/daikin-ac-panel.js?v=${VERSION_TAG}"
+
+UPDATER_PS1="${SCRIPT_DIR}/Update-DaikinLovelaceResource.ps1"
+UPDATER_PY="${SCRIPT_DIR}/update-daikin-lovelace-resource.py"
+if [[ -f "$UPDATER_PS1" ]] && command -v pwsh >/dev/null 2>&1; then
+  echo "Updating Lovelace resource via WebSocket (pwsh)"
+  pwsh -NoProfile -File "$UPDATER_PS1" -ResourceUrl "$TARGET_URL" -SambaHost "$HA_HOST"
+elif [[ -f "$UPDATER_PY" ]] && command -v python3 >/dev/null 2>&1; then
+  echo "Updating Lovelace resource via WebSocket (python)"
+  python3 "$UPDATER_PY" --url "$TARGET_URL" --samba-host "$HA_HOST"
+else
+  echo "Warning: WebSocket updater unavailable; syncing storage file only (reload may require HA UI edit)" >&2
+fi
+
 RESOURCE_STORE="${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/.storage/lovelace_resources"
 if ssh "${SSH_OPTS[@]}" "${HA_USER}@${HA_HOST}" "test -f '${REMOTE_CONFIG}/.storage/lovelace_resources'"; then
-  VERSION_TAG="$(echo "$PANEL_VERSION_FILE" | sed -n 's/.*v\([0-9][0-9]*\).*/\1/p')"
-  VERSION_TAG="${VERSION_TAG:-0}"
-  TARGET_URL="/local/daikin-ac-panel.js?v=${VERSION_TAG}"
   ssh "${SSH_OPTS[@]}" "${HA_USER}@${HA_HOST}" python3 - "$REMOTE_CONFIG" "$TARGET_URL" <<'PY'
 import json, pathlib, sys
 config_root, target_url = sys.argv[1], sys.argv[2].strip()
@@ -77,7 +90,7 @@ if not matched:
     items.append({"id": uuid.uuid4().hex, "url": target_url, "type": "module"})
 data["data"]["items"] = items
 path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-print(f"Updated Lovelace resource -> {target_url}")
+print(f"Synced Lovelace storage resource -> {target_url}")
 PY
 fi
 

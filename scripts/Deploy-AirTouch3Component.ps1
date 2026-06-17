@@ -18,7 +18,7 @@ param(
     [string] $SambaHost = '192.168.31.233',
     [string] $SambaShare = 'config',
     [string] $SourceDir = (Join-Path $PSScriptRoot '..\airtouch3_custom_component'),
-    [string] $PanelVersionFile = 'daikin-ac-panel-v23.js',
+    [string] $PanelVersionFile = 'daikin-ac-panel-v24.js',
     [switch] $RestartHa,
     [switch] $SkipLovelaceResourceUpdate,
     [PSCredential] $Credential
@@ -116,54 +116,26 @@ function Update-DaikinLovelaceResourceStorage {
     return $true
 }
 
-function Update-DaikinLovelaceResourceApi {
+function Update-DaikinLovelaceResourceWebSocket {
     param(
         [string] $ResourceUrl,
         [string] $SambaHost
     )
 
-    $loader = Join-Path $env:USERPROFILE '.grok\skills\secretstore-get\scripts\Load-SecretsToEnv.ps1'
-    if (-not (Test-Path -LiteralPath $loader)) {
+    $updater = Join-Path $PSScriptRoot 'Update-DaikinLovelaceResource.ps1'
+    if (-not (Test-Path -LiteralPath $updater)) {
+        Write-Warning "Lovelace WebSocket updater not found: $updater"
         return $false
     }
-
-    & $loader -Mappings @(
-        @{ SecretName = 'HomeAssistant_MazeppaHome_SecObj'; EnvVar = 'HOMEASSISTANT_TOKEN' },
-        @{ SecretName = 'HomeAssistant_MazeppaHome_SecObj'; EnvVar = 'HOMEASSISTANT_URL'; Property = 'Url' }
-    ) | Out-Null
-
-    if (-not $env:HOMEASSISTANT_TOKEN) {
-        return $false
-    }
-
-    $baseUrl = if ($env:HOMEASSISTANT_URL) { $env:HOMEASSISTANT_URL.TrimEnd('/') } else { "http://${SambaHost}:8123" }
-    $headers = @{ Authorization = "Bearer $env:HOMEASSISTANT_TOKEN" }
-    $normalizedUrl = $ResourceUrl.Trim()
 
     try {
-        $resources = Invoke-RestMethod -Uri "$baseUrl/api/lovelace/resources" -Headers $headers -Method Get
+        & $updater -ResourceUrl $ResourceUrl -SambaHost $SambaHost | Out-Null
+        return $true
     }
     catch {
-        Write-Warning "Lovelace resources API unavailable (storage file was still updated): $($_.Exception.Message)"
+        Write-Warning "Lovelace WebSocket update failed (storage file was still updated): $($_.Exception.Message)"
         return $false
     }
-
-    $matched = $false
-    foreach ($resource in @($resources)) {
-        if ([string]$resource.url -match 'daikin-ac-panel') {
-            $matched = $true
-            $body = @{ url = $normalizedUrl; type = 'module' } | ConvertTo-Json
-            Invoke-RestMethod -Uri "$baseUrl/api/lovelace/resources/$($resource.id)" -Headers $headers -Method Put -Body $body -ContentType 'application/json' | Out-Null
-        }
-    }
-
-    if (-not $matched) {
-        $body = @{ url = $normalizedUrl; type = 'module' } | ConvertTo-Json
-        Invoke-RestMethod -Uri "$baseUrl/api/lovelace/resources" -Headers $headers -Method Post -Body $body -ContentType 'application/json' | Out-Null
-    }
-
-    Write-Host "Updated Lovelace API resource -> $normalizedUrl" -ForegroundColor Green
-    return $true
 }
 
 try {
@@ -237,8 +209,8 @@ Provide -Credential or sign in to the share first (Explorer -> \\$SambaHost\$Sam
 
     if (-not $SkipLovelaceResourceUpdate) {
         $resourceUrl = Get-DaikinPanelResourceUrl -PanelVersionFile $PanelVersionFile
+        $null = Update-DaikinLovelaceResourceWebSocket -ResourceUrl $resourceUrl -SambaHost $SambaHost
         Update-DaikinLovelaceResourceStorage -StorageRoot $paths.StorageRoot -ResourceUrl $resourceUrl | Out-Null
-        Update-DaikinLovelaceResourceApi -ResourceUrl $resourceUrl -SambaHost $SambaHost | Out-Null
     }
 
     Write-Host "Deployed AirTouch 3 component to $($paths.ComponentDest)" -ForegroundColor Green
