@@ -18,7 +18,7 @@ param(
     [string] $SambaHost = '192.168.31.233',
     [string] $SambaShare = 'config',
     [string] $SourceDir = (Join-Path $PSScriptRoot '..\airtouch3_custom_component'),
-    [string] $PanelVersionFile = 'daikin-ac-panel-v25.js',
+    [string] $PanelVersionFile = 'daikin-ac-panel-v26.js',
     [switch] $RestartHa,
     [switch] $SkipLovelaceResourceUpdate,
     [PSCredential] $Credential
