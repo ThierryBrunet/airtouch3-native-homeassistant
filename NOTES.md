@@ -72,7 +72,7 @@ Faikin/Faikout is **independent** work by [RevK](https://codeberg.org/RevK) — 
 
 ## Build and deploy
 
-Step-by-step instructions for home owners: **[README.md](README.md)** — copy/deploy integration, add via UI, Lovelace resource, dashboard panel, optional helper and automation.
+Step-by-step instructions for home owners: **[docs/INSTALLATION-GUIDE.md](docs/INSTALLATION-GUIDE.md)** — Option A (Grok Build AI prompts) or Option B (manual), with verify/debug at every step. Quick reference: **[README.md](README.md)**.
 
 Example configs: `docs/dashboard-daikin-ac.example.yaml`, `docs/helper-ac-power.example.yaml`, `docs/automation-morning-start.example.yaml`.
 

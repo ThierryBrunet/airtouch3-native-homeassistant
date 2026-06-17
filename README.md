@@ -1,10 +1,16 @@
 # AirTouch 3 — native Home Assistant integration
 
+> **If like me you have an aging AirTouch 3 and regret not having an AirTouch 4/5 to enable integration with your Home Assistant, now is your chance to make this capability a reality at $ zero cost and in a couple of hours or less!!!**
+
 [![GitHub](https://img.shields.io/github/stars/ThierryBrunet/airtouch3-native-homeassistant?style=social)](https://github.com/ThierryBrunet/airtouch3-native-homeassistant)
 
 Local-control integration for **Polyaire AirTouch 3** ducted zone controllers (common with **Daikin** indoor units). Talks directly to the wall controller on TCP port **8899** — no `vzduch-dotek` .NET API, no cloud.
 
 See [NOTES.md](NOTES.md) for design rationale, Faikin alternative, ozczecho credit, and Grok Build provenance.
+
+**100% AI-driven installation** — see [docs/INSTALLATION-GUIDE.md](docs/INSTALLATION-GUIDE.md) for an exciting journey into AI-driven Home Assistant (Grok Build prompts **or** step-by-step manual path).
+
+![AirTouch 3 Climate integration in Home Assistant](docs/ha-integration-airtouch3-climate.jpg)
 
 ### Built with Grok Build in 12 hours
 
@@ -12,7 +18,7 @@ This entire project — integration, dashboard card, live HA UI, automations, he
 
 From the decision to port ozczecho’s .NET `vzduch-dotek` stack to native Python, to a working production system on Home Assistant: **12 hours** (Grok Build 0.2.54 / Composer 2.5 Fast, 16 June 2026). An outstanding example of **Grok Build’s phenomenal capabilities** for home automation.
 
-**Install and configure HA MCP for Grok Build:** [docs/grok-build-home-assistant-mcp.md](docs/grok-build-home-assistant-mcp.md) — prerequisites, long-lived token, `grok mcp add` or `.grok/config.toml`, `grok mcp doctor`, optional GitHub MCP.
+**Full installation (AI or manual):** [docs/INSTALLATION-GUIDE.md](docs/INSTALLATION-GUIDE.md) · **HA MCP setup:** [docs/grok-build-home-assistant-mcp.md](docs/grok-build-home-assistant-mcp.md)
 
 ![Daikin A/C dashboard](docs/ha-dashboard-daikin-ac.jpg)
 
@@ -313,6 +319,7 @@ Bump version in `manifest.json` when you fork or release.
 | `scripts/Deploy-AirTouch3Component.ps1` | Samba deploy to HA |
 | `scripts/validate_airtouch_protocol.py` | Protocol validation |
 | `docs/` | Screenshot, example YAML, Grok Build MCP guide |
+| `docs/INSTALLATION-GUIDE.md` | Full install — Option A (Grok Build prompts) or Option B (manual) |
 | `docs/grok-build-home-assistant-mcp.md` | Install/configure HA MCP (and optional GitHub MCP) for Grok Build |
 | `NOTES.md` | Design notes, alternatives, credits, 12-hour Grok Build story |
 

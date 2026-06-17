@@ -1,6 +1,6 @@
-# AirTouch 3 + Home Assistant — Installation Guide (DRAFT for review)
+# AirTouch 3 + Home Assistant — Installation Guide
 
-> **Status:** Draft v3 — not yet replacing [README.md](../README.md). Review structure, tone, and prompts before publishing.
+> **Start here** for the full install: Option A (Grok Build AI prompts) or Option B (hands-on manual). Overview and credits: [README.md](../README.md) · Design notes: [NOTES.md](../NOTES.md)
 
 ---
 
@@ -1025,17 +1025,4 @@ Verify end-to-end after upgrade. Explain breaking changes if any.
 
 ---
 
-# Appendix — What changes when this draft is approved
-
-| File | Change |
-|------|--------|
-| `README.md` | Short overview + links to Option A / B |
-| `docs/INSTALLATION-GUIDE.md` | Promote this draft |
-| `scripts/Deploy-AirTouch3Component.ps1` | `-Credential` parameter (**done**) |
-| `scripts/deploy-airtouch3.sh` | macOS/Linux SSH deploy (**done**) |
-| `docs/grok-build-home-assistant-mcp.md` | Cross-link Phase 0.6 |
-| `NOTES.md` | Pointer to INSTALLATION-GUIDE |
-
----
-
-*Draft v3 — 2026-06-16 — Grok Build TUI install (0.0); Windows, macOS, Linux; substitute AI note; legacy vzduch appendix.*
+*Installation guide — Windows, macOS, Linux · Grok Build TUI (0.0) · legacy vzduch appendix · June 2026*
