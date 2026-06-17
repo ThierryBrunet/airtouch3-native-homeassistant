@@ -265,6 +265,7 @@ class AirTouch3Climate(CoordinatorEntity, ClimateEntity):
             "ac_mode_name": self._api.ac_mode_name,
             "selected_hvac_mode": self.hvac_mode,
             "active_temperature_source": self._api.active_temperature_source,
+            "room_temperature": self._api.room_temperature,
         }
 
     async def async_turn_on(self, **kwargs):
