@@ -18,11 +18,14 @@ param(
     [string] $SambaHost = '192.168.31.233',
     [string] $SambaShare = 'config',
     [string] $SourceDir = (Join-Path $PSScriptRoot '..\airtouch3_custom_component'),
+    [string] $PanelVersionFile = 'daikin-ac-panel-v18.js',
     [switch] $RestartHa,
+    [switch] $SkipLovelaceResourceUpdate,
     [PSCredential] $Credential
 )
 
 $ErrorActionPreference = 'Stop'
+$LatestPanelAlias = 'daikin-ac-panel.js'
 
 $source = (Resolve-Path $SourceDir).Path
 $shareRoot = "\\$SambaHost\$SambaShare"
@@ -34,6 +37,53 @@ function Get-ConfigPaths {
         ComponentsRoot = Join-Path $Root 'custom_components'
         ComponentDest  = Join-Path $Root 'custom_components\airtouch3'
         WwwRoot        = Join-Path $Root 'www'
+        StorageRoot    = Join-Path $Root '.storage'
+    }
+}
+
+function Update-DaikinLovelaceResource {
+    param(
+        [string] $StorageRoot,
+        [string] $ResourceUrl
+    )
+
+    $resourcePath = Join-Path $StorageRoot 'lovelace_resources'
+    if (-not (Test-Path -LiteralPath $resourcePath)) {
+        Write-Warning "Lovelace resources storage not found: $resourcePath"
+        return
+    }
+
+    $normalizedUrl = $ResourceUrl.Trim()
+    $raw = Get-Content -LiteralPath $resourcePath -Raw -Encoding UTF8
+    $json = $raw | ConvertFrom-Json
+    $updated = $false
+    $matched = $false
+
+    foreach ($item in $json.data.items) {
+        if ($item.url -match 'daikin-ac-panel') {
+            $matched = $true
+            if ($item.url.Trim() -ne $normalizedUrl) {
+                $item.url = $normalizedUrl
+                $updated = $true
+            }
+        }
+    }
+
+    if (-not $matched) {
+        $json.data.items += [PSCustomObject]@{
+            id   = ([guid]::NewGuid().ToString('N'))
+            url  = $normalizedUrl
+            type = 'module'
+        }
+        $updated = $true
+    }
+
+    if ($updated) {
+        $json | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $resourcePath -Encoding UTF8
+        Write-Host "Updated Lovelace resource -> $normalizedUrl" -ForegroundColor Green
+    }
+    else {
+        Write-Host "Lovelace resource already set to $normalizedUrl" -ForegroundColor DarkGray
     }
 }
 
@@ -73,14 +123,21 @@ Provide -Credential or sign in to the share first (Explorer -> \\$SambaHost\$Sam
         throw "robocopy failed with exit code $LASTEXITCODE"
     }
 
+    $latestPanelSource = Join-Path $source "www\$PanelVersionFile"
+    if (-not (Test-Path -LiteralPath $latestPanelSource)) {
+        throw "Latest panel JS not found: $latestPanelSource"
+    }
+
     $wwwFiles = @(
+        $PanelVersionFile, $LatestPanelAlias,
         'daikin-ac-panel-v17.js', 'daikin-ac-panel-v16.js', 'daikin-ac-panel-v15.js', 'daikin-ac-panel-v14.js', 'daikin-ac-panel-v13.js', 'daikin-ac-panel-v12.js', 'daikin-ac-panel-v11.js', 'daikin-ac-panel-v10.js', 'daikin-ac-panel-v9.js',
         'daikin-ac-panel-v8.js', 'daikin-ac-panel-v7.js', 'daikin-ac-panel-v6.js',
         'daikin-ac-panel-v5.js', 'daikin-ac-panel-v4.js', 'daikin-ac-panel-v3.js',
-        'daikin-ac-panel-v2.js', 'daikin-ac-panel.js'
-    )
+        'daikin-ac-panel-v2.js'
+    ) | Select-Object -Unique
+
     foreach ($wwwFile in $wwwFiles) {
-        $wwwSource = Join-Path $source "www\$wwwFile"
+        $wwwSource = if ($wwwFile -eq $LatestPanelAlias) { $latestPanelSource } else { Join-Path $source "www\$wwwFile" }
         $wwwDest = Join-Path $paths.WwwRoot $wwwFile
         if (Test-Path -LiteralPath $wwwSource) {
             Copy-Item -LiteralPath $wwwSource -Destination $wwwDest -Force
@@ -88,7 +145,13 @@ Provide -Credential or sign in to the share first (Explorer -> \\$SambaHost\$Sam
         }
     }
 
+    if (-not $SkipLovelaceResourceUpdate) {
+        $resourceUrl = "/local/$PanelVersionFile"
+        Update-DaikinLovelaceResource -StorageRoot $paths.StorageRoot -ResourceUrl $resourceUrl
+    }
+
     Write-Host "Deployed AirTouch 3 component to $($paths.ComponentDest)" -ForegroundColor Green
+    Write-Host "Dashboard card version: $PanelVersionFile (alias: /local/$LatestPanelAlias)" -ForegroundColor Cyan
 
     if ($RestartHa) {
         Write-Host "Restart Home Assistant from Settings -> System -> Restart, then add the integration via UI."

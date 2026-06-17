@@ -38,13 +38,45 @@ rsync -avz --delete \
   -e "$RSYNC_SSH" \
   "$SOURCE_DIR/" "${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/custom_components/airtouch3/"
 
+PANEL_VERSION_FILE="${PANEL_VERSION_FILE:-daikin-ac-panel-v18.js}"
+
 for card in \
-  "$SOURCE_DIR/www/daikin-ac-panel-v17.js" \
+  "$SOURCE_DIR/www/$PANEL_VERSION_FILE" \
   "$SOURCE_DIR"/www/daikin-ac-panel-v*.js \
   "$SOURCE_DIR"/www/daikin-ac-panel.js; do
   [[ -f "$card" ]] || continue
   echo "Deploying dashboard card $(basename "$card")"
   rsync -avz -e "$RSYNC_SSH" "$card" "${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/www/"
 done
+
+if [[ -f "$SOURCE_DIR/www/$PANEL_VERSION_FILE" ]]; then
+  echo "Publishing latest panel alias -> $PANEL_VERSION_FILE"
+  rsync -avz -e "$RSYNC_SSH" \
+    "$SOURCE_DIR/www/$PANEL_VERSION_FILE" \
+    "${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/www/daikin-ac-panel.js"
+fi
+
+RESOURCE_STORE="${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/.storage/lovelace_resources"
+if ssh "${SSH_OPTS[@]}" "${HA_USER}@${HA_HOST}" "test -f '${REMOTE_CONFIG}/.storage/lovelace_resources'"; then
+  TARGET_URL="/local/${PANEL_VERSION_FILE}"
+  ssh "${SSH_OPTS[@]}" "${HA_USER}@${HA_HOST}" python3 - "$REMOTE_CONFIG" "$TARGET_URL" <<'PY'
+import json, pathlib, sys
+config_root, target_url = sys.argv[1], sys.argv[2].strip()
+path = pathlib.Path(config_root) / ".storage" / "lovelace_resources"
+data = json.loads(path.read_text(encoding="utf-8"))
+items = data.get("data", {}).get("items", [])
+matched = False
+for item in items:
+    if "daikin-ac-panel" in item.get("url", ""):
+        matched = True
+        item["url"] = target_url
+if not matched:
+    import uuid
+    items.append({"id": uuid.uuid4().hex, "url": target_url, "type": "module"})
+data["data"]["items"] = items
+path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+print(f"Updated Lovelace resource -> {target_url}")
+PY
+fi
 
 echo "Done. Restart Home Assistant (Settings -> System -> Restart), then add the integration via UI."
