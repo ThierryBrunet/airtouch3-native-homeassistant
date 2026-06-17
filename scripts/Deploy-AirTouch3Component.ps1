@@ -18,7 +18,7 @@ param(
     [string] $SambaHost = '192.168.31.233',
     [string] $SambaShare = 'config',
     [string] $SourceDir = (Join-Path $PSScriptRoot '..\airtouch3_custom_component'),
-    [string] $PanelVersionFile = 'daikin-ac-panel-v18.js',
+    [string] $PanelVersionFile = 'daikin-ac-panel-v19.js',
     [switch] $RestartHa,
     [switch] $SkipLovelaceResourceUpdate,
     [PSCredential] $Credential
@@ -41,6 +41,16 @@ function Get-ConfigPaths {
     }
 }
 
+function Get-DaikinPanelResourceUrl {
+    param([string] $PanelVersionFile)
+
+    $versionTag = '0'
+    if ($PanelVersionFile -match 'v(\d+)') {
+        $versionTag = $Matches[1]
+    }
+    return "/local/daikin-ac-panel.js?v=$versionTag"
+}
+
 function Update-DaikinLovelaceResource {
     param(
         [string] $StorageRoot,
@@ -55,36 +65,26 @@ function Update-DaikinLovelaceResource {
 
     $normalizedUrl = $ResourceUrl.Trim()
     $raw = Get-Content -LiteralPath $resourcePath -Raw -Encoding UTF8
+    if ($raw -match 'daikin-ac-panel') {
+        $newRaw = $raw -replace '"/local/daikin-ac-panel[^"]*"', "`"$normalizedUrl`""
+        if ($newRaw -ne $raw) {
+            Set-Content -LiteralPath $resourcePath -Value $newRaw -Encoding UTF8
+            Write-Host "Updated Lovelace resource -> $normalizedUrl" -ForegroundColor Green
+        }
+        else {
+            Write-Host "Lovelace resource already set to $normalizedUrl" -ForegroundColor DarkGray
+        }
+        return
+    }
+
     $json = $raw | ConvertFrom-Json
-    $updated = $false
-    $matched = $false
-
-    foreach ($item in $json.data.items) {
-        if ($item.url -match 'daikin-ac-panel') {
-            $matched = $true
-            if ($item.url.Trim() -ne $normalizedUrl) {
-                $item.url = $normalizedUrl
-                $updated = $true
-            }
-        }
+    $json.data.items += [PSCustomObject]@{
+        id   = ([guid]::NewGuid().ToString('N'))
+        url  = $normalizedUrl
+        type = 'module'
     }
-
-    if (-not $matched) {
-        $json.data.items += [PSCustomObject]@{
-            id   = ([guid]::NewGuid().ToString('N'))
-            url  = $normalizedUrl
-            type = 'module'
-        }
-        $updated = $true
-    }
-
-    if ($updated) {
-        $json | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $resourcePath -Encoding UTF8
-        Write-Host "Updated Lovelace resource -> $normalizedUrl" -ForegroundColor Green
-    }
-    else {
-        Write-Host "Lovelace resource already set to $normalizedUrl" -ForegroundColor DarkGray
-    }
+    $json | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $resourcePath -Encoding UTF8
+    Write-Host "Added Lovelace resource -> $normalizedUrl" -ForegroundColor Green
 }
 
 try {
@@ -146,12 +146,13 @@ Provide -Credential or sign in to the share first (Explorer -> \\$SambaHost\$Sam
     }
 
     if (-not $SkipLovelaceResourceUpdate) {
-        $resourceUrl = "/local/$PanelVersionFile"
+        $resourceUrl = Get-DaikinPanelResourceUrl -PanelVersionFile $PanelVersionFile
         Update-DaikinLovelaceResource -StorageRoot $paths.StorageRoot -ResourceUrl $resourceUrl
     }
 
     Write-Host "Deployed AirTouch 3 component to $($paths.ComponentDest)" -ForegroundColor Green
-    Write-Host "Dashboard card version: $PanelVersionFile (alias: /local/$LatestPanelAlias)" -ForegroundColor Cyan
+    $resourceHint = Get-DaikinPanelResourceUrl -PanelVersionFile $PanelVersionFile
+    Write-Host "Dashboard card version: $PanelVersionFile (Lovelace resource: $resourceHint)" -ForegroundColor Cyan
 
     if ($RestartHa) {
         Write-Host "Restart Home Assistant from Settings -> System -> Restart, then add the integration via UI."

@@ -38,7 +38,7 @@ rsync -avz --delete \
   -e "$RSYNC_SSH" \
   "$SOURCE_DIR/" "${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/custom_components/airtouch3/"
 
-PANEL_VERSION_FILE="${PANEL_VERSION_FILE:-daikin-ac-panel-v18.js}"
+PANEL_VERSION_FILE="${PANEL_VERSION_FILE:-daikin-ac-panel-v19.js}"
 
 for card in \
   "$SOURCE_DIR/www/$PANEL_VERSION_FILE" \
@@ -58,7 +58,9 @@ fi
 
 RESOURCE_STORE="${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/.storage/lovelace_resources"
 if ssh "${SSH_OPTS[@]}" "${HA_USER}@${HA_HOST}" "test -f '${REMOTE_CONFIG}/.storage/lovelace_resources'"; then
-  TARGET_URL="/local/${PANEL_VERSION_FILE}"
+  VERSION_TAG="$(echo "$PANEL_VERSION_FILE" | sed -n 's/.*v\([0-9][0-9]*\).*/\1/p')"
+  VERSION_TAG="${VERSION_TAG:-0}"
+  TARGET_URL="/local/daikin-ac-panel.js?v=${VERSION_TAG}"
   ssh "${SSH_OPTS[@]}" "${HA_USER}@${HA_HOST}" python3 - "$REMOTE_CONFIG" "$TARGET_URL" <<'PY'
 import json, pathlib, sys
 config_root, target_url = sys.argv[1], sys.argv[2].strip()

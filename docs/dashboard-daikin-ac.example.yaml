@@ -2,7 +2,7 @@
 # Replace every entity_id with values from Developer tools → States after adding the integration.
 #
 # Register the resource first:
-#   /local/daikin-ac-panel-v18.js  (type: JavaScript module)
+#   /local/daikin-ac-panel.js?v=19  (type: JavaScript module)
 #
 # View settings (UI): Panel mode recommended, optional theme "midnight".
 
