@@ -1,0 +1,42 @@
+# Optional automation — morning AC start with early motion wake-up.
+# Create via Settings → Automations → Create automation → Edit in YAML.
+# Replace entity_ids for your home.
+
+alias: Daikin AC Morning Start
+description: >-
+  Power on the Daikin AC at 6:00 AM, or earlier when living room motion is
+  detected between 4:00 and 6:00 AM, and set system fan to High. Zone targets
+  and HVAC mode remain as configured on the AirTouch controller.
+mode: single
+triggers:
+  - trigger: time
+    at: "06:00:00"
+    id: scheduled
+  - trigger: state
+    entity_id: binary_sensor.aqara_motion5_occupancy
+    to: "on"
+    id: living_motion
+conditions:
+  - condition: state
+    entity_id: binary_sensor.brunet_ac_power
+    state: "off"
+  - condition: or
+    conditions:
+      - condition: trigger
+        id: scheduled
+      - condition: and
+        conditions:
+          - condition: trigger
+            id: living_motion
+          - condition: time
+            after: "04:00:00"
+            before: "06:00:00"
+actions:
+  - action: climate.turn_on
+    target:
+      entity_id: climate.brunet
+  - action: climate.set_fan_mode
+    target:
+      entity_id: climate.brunet
+    data:
+      fan_mode: High

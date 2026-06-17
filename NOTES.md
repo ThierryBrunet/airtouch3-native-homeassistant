@@ -64,6 +64,14 @@ Faikin/Faikout is **independent** work by [RevK](https://codeberg.org/RevK) — 
 
 ---
 
+## Build and deploy
+
+Step-by-step instructions for home owners: **[README.md](README.md)** — copy/deploy integration, add via UI, Lovelace resource, dashboard panel, optional helper and automation.
+
+Example configs: `docs/dashboard-daikin-ac.example.yaml`, `docs/helper-ac-power.example.yaml`, `docs/automation-morning-start.example.yaml`.
+
+---
+
 ## Planned public repository contents
 
 Summary of what **`airtouch3-native-homeassistant`** will publish on GitHub:
@@ -75,9 +83,7 @@ Summary of what **`airtouch3-native-homeassistant`** will publish on GitHub:
 | **Dashboard card** | `www/daikin-ac-panel-v11.js` — custom Lovelace panel with unit power, modes, fan row, zone controls, 7-day temperature + damper charts |
 | **Deploy** | `scripts/Deploy-AirTouch3Component.ps1` — Samba deploy to HA `custom_components` and `www` |
 | **Validation** | `scripts/Test-AirTouchConnection.ps1`, `scripts/validate_airtouch_protocol.py` |
-| **Docs** | `NOTES.md` (this file), screenshot (`docs/ha-dashboard-daikin-ac.jpg`), rationale, Faikin alternative, Grok Build provenance, ozczecho credit |
+| **Docs** | `README.md` (build/deploy), `NOTES.md` (this file), screenshot, example YAML under `docs/` |
 | **License** | MIT (compatible with upstream vzduch-dotek) |
 
 **Not included** in the public repo (local reference only, `.gitignore`d): cloned `vzduch-dotek` .NET tree, legacy HA add-on fork, and session misc notes.
-
-**HA config created via MCP** (documented, not exported as YAML files): `daikin-ac` dashboard, `automation.daikin_ac_morning_start`, `binary_sensor.brunet_ac_power` helper — restore from HA backup or recreate using the integration README once published.

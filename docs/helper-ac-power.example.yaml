@@ -1,0 +1,13 @@
+# Optional template binary sensor for dashboard chart "unit ON" overlay.
+# Prefer creating via UI: Settings → Helpers → Template → Binary sensor.
+#
+# State template (adjust climate entity_id):
+#   {{ state_attr('climate.brunet', 'ac_power') }}
+#
+# Name the helper so entity_id becomes binary_sensor.brunet_ac_power
+# (matches daikin-ac-panel-v11.js), or edit _powerEntity in the JS file.
+#
+# UI equivalent — no YAML file required on modern HA:
+#   Name: Brunet AC Power
+#   Template: {{ state_attr('climate.brunet', 'ac_power') }}
+#   Icon: mdi:power

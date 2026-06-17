@@ -1,0 +1,36 @@
+# Example Lovelace card for the daikin-ac panel view.
+# Replace every entity_id with values from Developer tools → States after adding the integration.
+#
+# Register the resource first:
+#   /local/daikin-ac-panel-v11.js  (type: JavaScript module)
+#
+# View settings (UI): Panel mode recommended, optional theme "midnight".
+
+type: custom:daikin-ac-panel
+title: Daikin A/C
+climate: climate.brunet
+zones:
+  - name: KITCHEN
+    switch: switch.kitchen
+    fan: fan.kitchen
+    sensor: sensor.airtouch3_90681913_0
+  - name: FAMILY
+    switch: switch.family
+    fan: fan.family
+    sensor: sensor.airtouch3_90681913_2
+  - name: MASTER
+    switch: switch.master
+    fan: fan.master
+    sensor: sensor.airtouch3_90681913_4
+  - name: BED 2
+    switch: switch.bed_2
+    fan: fan.bed_2
+    sensor: sensor.airtouch3_90681913_6
+  - name: Angel
+    switch: switch.angel
+    fan: fan.angel
+    sensor: sensor.airtouch3_90681913_8
+  - name: Street
+    switch: switch.street
+    fan: fan.street
+    sensor: sensor.airtouch3_90681913_10
