@@ -7,3 +7,12 @@ set_zone_temperature:
     temperature:
       description: "The desired temperature (in celcius) and valid range: 16 to 32"
       example: 24
+set_zone_damper_control:
+  description: Switch a zone between ITC auto temperature control and manual damper mode
+  fields:
+    entity_id:
+      description: "The zone switch entity id"
+      example: switch.family
+    mode:
+      description: "auto = ITC temperature control, manual = manual damper percentage"
+      example: manual

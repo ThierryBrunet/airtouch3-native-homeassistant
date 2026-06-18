@@ -157,6 +157,44 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     hass.services.async_register(AT3_DOMAIN, "set_zone_temperature", handle_set_zone_temperature)
 
+    async def handle_set_zone_damper_control(call):
+        """Toggle zone ITC auto vs manual damper until the requested mode is active."""
+        entity_id = call.data.get("entity_id")
+        mode = call.data.get("mode")
+        if mode not in ("auto", "manual"):
+            _LOGGER.warning(
+                "[AT3Climate.handle_set_zone_damper_control] mode must be auto or manual"
+            )
+            return
+        if entity_id is None:
+            _LOGGER.warning(
+                "[AT3Climate.handle_set_zone_damper_control] entity_id not specified"
+            )
+            return
+
+        entity_item = hass.states.get(entity_id)
+        if entity_item is None:
+            _LOGGER.warning(
+                "[AT3Climate.handle_set_zone_damper_control] Entity not found %s",
+                entity_id,
+            )
+            return
+
+        zone_id = entity_item.attributes.get("id")
+        if zone_id is None:
+            _LOGGER.warning(
+                "[AT3Climate.handle_set_zone_damper_control] Entity has no zone id %s",
+                entity_item,
+            )
+            return
+
+        await coordinator.device.set_zone_damper_control_mode(zone_id, mode)
+        await coordinator.async_request_refresh()
+
+    hass.services.async_register(
+        AT3_DOMAIN, "set_zone_damper_control", handle_set_zone_damper_control
+    )
+
 
 class AirTouch3Climate(CoordinatorEntity, ClimateEntity):
     """Representation of a AirTouch3 Unit."""

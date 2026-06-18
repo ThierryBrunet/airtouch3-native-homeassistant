@@ -90,6 +90,16 @@ class AirTouchMessages:
         self._message[12] = self._checksum()
         return bytes(self._message)
 
+    def toggle_zone_temperature_fan(self, room: int) -> bytes:
+        """Toggle zone between ITC temperature control and manual damper mode."""
+        self._reset_contents()
+        self._message[1] = 0x81
+        self._message[3] = room & 0xFF
+        self._message[4] = 0x80
+        self._message[5] = 1
+        self._message[12] = self._checksum()
+        return bytes(self._message)
+
     def _checksum(self) -> int:
         total = 0
         for index in range(12):

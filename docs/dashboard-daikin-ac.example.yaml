@@ -9,6 +9,7 @@
 type: custom:daikin-ac-panel
 title: Daikin A/C
 climate: climate.brunet
+outside_temperature_sensor: sensor.aqara_motion4_device_temperature
 zones:
   - name: KITCHEN
     switch: switch.kitchen

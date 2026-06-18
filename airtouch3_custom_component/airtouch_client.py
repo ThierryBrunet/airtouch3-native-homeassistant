@@ -405,6 +405,41 @@ class AirTouch3Device:
         await self._refresh(self._messages.set_fan(zone_id, inc_dec))
         return selected_zone.desired_temperature
 
+    def zone_is_manual_damper(self, zone_id: int) -> bool:
+        if zone_id >= len(self._zones):
+            return False
+        return self._zones[zone_id].zone_temperature_type == ZONE_TEMPERATURE_TYPE_HIDE
+
+    async def set_zone_damper_control_mode(self, zone_id: int, mode: str) -> int:
+        """Switch zone between ITC auto temperature (auto) and manual damper (manual)."""
+        if zone_id >= len(self._zones):
+            _LOGGER.warning("Zone %s not found", zone_id)
+            return -1
+        if mode not in ("auto", "manual"):
+            raise ValueError("mode must be 'auto' or 'manual'")
+
+        target_manual = mode == "manual"
+        for attempt in range(6):
+            await self._refresh()
+            if zone_id >= len(self._zones):
+                return -1
+            is_manual = self.zone_is_manual_damper(zone_id)
+            if is_manual == target_manual:
+                return self._zones[zone_id].zone_temperature_type
+            await self._refresh(
+                self._messages.toggle_zone_temperature_fan(zone_id)
+            )
+            await asyncio.sleep(0.5)
+            _LOGGER.debug(
+                "Zone %s damper control toggle attempt %s -> manual=%s",
+                zone_id,
+                attempt + 1,
+                target_manual,
+            )
+
+        await self._refresh()
+        return self._zones[zone_id].zone_temperature_type if zone_id < len(self._zones) else -1
+
     async def set_zone_damper(self, zone_id: int, percentage: int) -> int:
         if zone_id >= len(self._zones):
             _LOGGER.warning("Zone %s not found", zone_id)

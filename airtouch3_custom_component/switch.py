@@ -6,6 +6,7 @@ from homeassistant.helpers.entity import ToggleEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import DOMAIN as AT3_DOMAIN
+from .airtouch_client import ZONE_TEMPERATURE_TYPE_HIDE
 from .coordinator import AirTouch3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -71,8 +72,10 @@ class ZoneSwitch(CoordinatorEntity, ToggleEntity):
         if zone is None:
             return {}
         current_temperature = self._api.get_zone_current_temperature(zone.id)
+        manual_damper = zone.zone_temperature_type == ZONE_TEMPERATURE_TYPE_HIDE
         attrs = {
             "zone_temperature_type": zone.zone_temperature_type,
+            "damper_control_mode": "manual" if manual_damper else "auto",
             "fan_value": zone.fan_value,
             "is_spill": zone.is_spill,
             "id": zone.id,
