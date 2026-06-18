@@ -38,7 +38,7 @@ rsync -avz --delete \
   -e "$RSYNC_SSH" \
   "$SOURCE_DIR/" "${HA_USER}@${HA_HOST}:${REMOTE_CONFIG}/custom_components/airtouch3/"
 
-PANEL_VERSION_FILE="${PANEL_VERSION_FILE:-daikin-ac-panel-v28.js}"
+PANEL_VERSION_FILE="${PANEL_VERSION_FILE:-daikin-ac-panel-v29.js}"
 
 for card in \
   "$SOURCE_DIR/www/$PANEL_VERSION_FILE" \
