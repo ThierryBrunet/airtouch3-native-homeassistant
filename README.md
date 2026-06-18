@@ -20,7 +20,7 @@ From the decision to port ozczecho’s .NET `vzduch-dotek` stack to native Pytho
 
 **Full installation (AI or manual):** [docs/INSTALLATION-GUIDE.md](docs/INSTALLATION-GUIDE.md) · **HA MCP setup:** [docs/grok-build-home-assistant-mcp.md](docs/grok-build-home-assistant-mcp.md)
 
-![Daikin A/C dashboard](docs/ha-dashboard-daikin-ac.jpg)
+![Daikin A/C dashboard — unit controls, zone cards with Auto/Manual/HA damper modes, and 7-day temperature chart with AC return-air and Alfresco outside sensors](docs/ha-dashboard-daikin-ac.jpg)
 
 ---
 

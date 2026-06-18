@@ -16,9 +16,9 @@ Context for why this repository exists and which alternatives were evaluated bef
 
 The dashboard, custom Lovelace card, automations, helpers, and integration wiring were built entirely through Grok Build talking to the live Home Assistant instance over MCP. See [docs/grok-build-home-assistant-mcp.md](docs/grok-build-home-assistant-mcp.md) for how to install and configure the Home Assistant MCP server in Grok Build.
 
-![Daikin A/C dashboard in Home Assistant — unit modes, fan speed, and six zone cards with temperature and damper controls](docs/ha-dashboard-daikin-ac.jpg)
+![Daikin A/C dashboard in Home Assistant — unit modes, fan speed, six zone cards with Auto/Manual/HA damper control, and 7-day temperature chart](docs/ha-dashboard-daikin-ac.jpg)
 
-*Daikin A/C panel dashboard (`daikin-ac`): climate entity, per-zone switches/fans, target temperature and damper controls, 7-day temperature and damper history charts (in panel v11).*
+*Daikin A/C panel dashboard (`daikin-ac`): climate entity, per-zone switches/fans, target temperature and damper controls (Auto/Manual/HA), 7-day temperature chart with zone ITC sensors, AC return-air, Alfresco outside temperature, and unit-ON overlay bands.*
 
 ---
 
@@ -86,7 +86,7 @@ Summary of what **`airtouch3-native-homeassistant`** will publish on GitHub:
 |------|----------|
 | **Integration** | Native Python `custom_components/airtouch3/` — direct TCP to the panel (v1.0.5): climate, zones, fans, sensors, config flow, `airtouch3.set_zone_temperature` service |
 | **Protocol** | `protocol/` package — messages, parser, client (derived from ozczecho’s published behaviour) |
-| **Dashboard card** | `www/daikin-ac-panel-v11.js` — custom Lovelace panel with unit power, modes, fan row, zone controls, 7-day temperature + damper charts |
+| **Dashboard card** | `www/daikin-ac-panel-v*.js` — custom Lovelace panel with unit power, modes, fan row, zone controls, Auto/Manual/HA damper modes, 7-day temperature + damper charts |
 | **Deploy** | `scripts/Deploy-AirTouch3Component.ps1` — Samba deploy to HA `custom_components` and `www` |
 | **Validation** | `scripts/Test-AirTouchConnection.ps1`, `scripts/validate_airtouch_protocol.py` |
 | **Docs** | `README.md` (build/deploy), `NOTES.md` (this file), `docs/grok-build-home-assistant-mcp.md`, screenshot, example YAML |

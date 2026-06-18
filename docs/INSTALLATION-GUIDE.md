@@ -817,6 +817,8 @@ Verify under Settings → Dashboards → Resources. Remind me: hard-refresh (Ctr
 
 ## 3.2 Dashboard panel
 
+![Daikin A/C dashboard — unit controls, zone cards with Auto/Manual/HA damper modes, and 7-day temperature chart](ha-dashboard-daikin-ac.jpg)
+
 **Option A prompt:**
 
 ```
